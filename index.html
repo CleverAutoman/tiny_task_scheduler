@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Smart To‑Do Scheduler</title>
+    <style>
+        :root { --gap: 14px; --card: #fff; --bg: #f6f7fb; --text: #1a1a1a; --muted:#6b7280; --primary:#3b82f6; }
+        html,body{ height:100%; }
+        body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:var(--bg); color:var(--text); }
+        header{ position:sticky; top:0; background:#fff; border-bottom:1px solid #e5e7eb; padding:12px 16px; z-index:10; }
+        h1{ margin:0; font-size:18px; }
+        main{ max-width:1100px; margin:24px auto; padding:0 16px; display:grid; grid-template-columns: 1.2fr 1fr; gap:var(--gap); }
+        .card{ background:var(--card); border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+        .card h2{ font-size:16px; margin:0; padding:12px 14px; border-bottom:1px solid #e5e7eb; }
+        .card .content{ padding:14px; }
+        .grid{ display:grid; gap:10px; grid-template-columns: repeat(6, 1fr); }
+        .grid .col-6{ grid-column: span 6; }
+        .grid .col-3{ grid-column: span 3; }
+        .grid .col-2{ grid-column: span 2; }
+        .grid .col-4{ grid-column: span 4; }
+        label{ font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
+        input, select{ width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px; background:#fff; }
+        input[type="number"]{ -moz-appearance:textfield; }
+        button{ appearance:none; border:1px solid #d1d5db; background:#fff; color:#111827; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:600; }
+        .btn-primary{ background:var(--primary); color:white; border-color:var(--primary); }
+        .btn-ghost{ background:#fff; }
+        .toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+        .muted{ color:var(--muted); }
+        .list{ display:flex; flex-direction:column; gap:10px; }
+        .row{ border:1px solid #e5e7eb; border-radius:10px; padding:10px; display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center; }
+        .row header{ position:static; border:none; padding:0; background:none; }
+        .row .meta{ font-size:12px; color:var(--muted); display:flex; gap:10px; flex-wrap:wrap; }
+        .pill{ padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid #e5e7eb; }
+        .pill.pos{ background:#ecfeff; border-color:#a5f3fc; }
+        .pill.neg{ background:#fff1f2; border-color:#fecdd3; }
+        .pill.neu{ background:#f1f5f9; border-color:#e2e8f0; }
+        .next{ background:#f0f9ff; border-color:#bae6fd; }
+        footer{ text-align:center; color:var(--muted); font-size:12px; margin:24px 0; }
+        .hint{ font-size:12px; color:#6b7280; }
+        .split{ display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:end; }
+        .kbd{ font: 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; padding:2px 6px; border:1px solid #d1d5db; border-bottom-width:2px; border-radius:6px; background:#fff; }
+        .danger { color:#b91c1c; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Smart To‑Do Scheduler · Emotion × Stress × Time</h1>
+</header>
+
+<main>
+    <!-- Left: Add/Edit + Controls + Next -->
+    <section class="card">
+        <h2>New / Update Task</h2>
+        <div class="content">
+            <div class="grid">
+                <div class="col-3">
+                    <label>ID</label>
+                    <input id="id" placeholder="task-001" />
+                </div>
+                <div class="col-3">
+                    <label>Title</label>
+                    <input id="title" placeholder="Write weekly report" />
+                </div>
+                <div class="col-2">
+                    <label>Emotion</label>
+                    <select id="emotion">
+                        <option>NEUTRAL</option>
+                        <option>PLEASANT</option>
+                        <option>AVERSIVE</option>
+                    </select>
+                </div>
+                <div class="col-2">
+                    <label>Minutes Needed</label>
+                    <input id="minutes" type="number" min="1" value="25" />
+                </div>
+                <div class="col-2">
+                    <label>Importance (1–5)</label>
+                    <input id="importance" type="number" min="1" max="5" value="3" />
+                </div>
+                <div class="col-6">
+                    <label>Due At (local)</label>
+                    <input id="due" type="datetime-local" />
+                </div>
+                <div class="col-6">
+                    <div class="toolbar">
+                        <button class="btn-primary" id="btnAdd">Add / Update</button>
+                        <button class="btn-ghost" id="btnClear">Clear Form</button>
+                        <span class="hint">Tip: set an ID once, re‑post with same ID to update the task.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Context · Choose Next Task</h2>
+        <div class="content">
+            <div class="grid">
+                <div class="col-2">
+                    <label>Free Window (min)</label>
+                    <input id="freeMin" type="number" min="5" step="5" value="30" />
+                </div>
+                <div class="col-2">
+                    <label>Stress (1 low – 5 high)</label>
+                    <input id="stress" type="number" min="1" max="5" value="3" />
+                </div>
+                <div class="col-2" style="display:flex;align-items:end;gap:8px;">
+                    <button id="btnNext" class="btn-primary">Suggest Next</button>
+                    <button id="btnOrder" class="btn-ghost">Refresh Order</button>
+                </div>
+                <div class="col-6">
+                    <div id="nextBox" class="row next" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Right: Task List & Ordered -->
+    <section class="card" style="grid-column: span 2;">
+        <h2>Tasks</h2>
+        <div class="content">
+            <div class="split">
+                <div class="hint">Backend base URL: <span class="kbd" id="baseShow"></span></div>
+                <div class="toolbar">
+                    <input id="base" placeholder="http://localhost:8080" style="width:260px;"/>
+                    <button id="btnSetBase">Set</button>
+                    <button id="btnLoad">Reload</button>
+                </div>
+            </div>
+            <div class="list" id="taskList" style="margin-top:10px;"></div>
+        </div>
+    </section>
+
+    <section class="card" style="grid-column: span 2;">
+        <h2>Ordered by Scheduler</h2>
+        <div class="content">
+            <div class="list" id="orderList"></div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="hint">Use <span class="kbd">⌘/Ctrl + R</span> to reload the page. Ensure your daemon allows CORS or serve this page from the same origin.</div>
+</footer>
+
+<script>
+    // --- Config ---
+    let BASE = localStorage.getItem('todo_base') || 'http://localhost:8080';
+    const el = (id) => document.getElementById(id);
+    const showBase = () => { el('baseShow').textContent = BASE; el('base').value = BASE; };
+    showBase();
+
+    function toRFC3339Local(dtLocalValue) {
+        if (!dtLocalValue) return null;
+        // datetime-local -> Date -> ISO string (UTC Z). Servers parse RFC3339/ISO8601.
+        const d = new Date(dtLocalValue);
+        if (isNaN(d.getTime())) return null;
+        return d.toISOString();
+    }
+
+    async function api(path, opts={}) {
+        const url = BASE + path;
+        const res = await fetch(url, Object.assign({ headers:{'Content-Type':'application/json'} }, opts));
+        if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(res.status+" "+txt);
+        }
+        if (res.status === 204) return null;
+        const ct = res.headers.get('content-type') || '';
+        return ct.includes('application/json') ? res.json() : res.text();
+    }
+
+    function taskRow(t) {
+        const due = t.dueAt ? new Date(t.dueAt).toLocaleString() : '-';
+        const emoClass = t.emotion === 'PLEASANT' ? 'pos' : (t.emotion === 'AVERSIVE' ? 'neg' : 'neu');
+        const div = document.createElement('div');
+        div.className = 'row';
+        div.innerHTML = `
+        <div>
+          <div style="font-weight:600;">${t.title} <span class="muted">#${t.id}</span></div>
+          <div class="meta">
+            <span class="pill ${emoClass}">Emotion: ${t.emotion}</span>
+            <span class="pill">Need: ${t.minutesNeeded} min</span>
+            <span class="pill">Importance: ${t.importance}</span>
+            <span class="pill">Due: ${due}</span>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button data-id="${t.id}" class="btn-ghost btn-fill">Fill</button>
+          <button data-id="${t.id}" class="danger btn-del">Delete</button>
+        </div>
+      `;
+        div.querySelector('.btn-del').onclick = async (e)=>{
+            const id = e.currentTarget.getAttribute('data-id');
+            if (!confirm('Delete task '+id+' ?')) return;
+            try {
+                await api('/tasks/'+encodeURIComponent(id), { method:'DELETE' });
+                await loadTasks();
+                await refreshOrder();
+            } catch (err) { alert(err.message); }
+        };
+        div.querySelector('.btn-fill').onclick = ()=>{
+            el('id').value = t.id;
+            el('title').value = t.title;
+            el('emotion').value = t.emotion;
+            el('minutes').value = t.minutesNeeded;
+            el('importance').value = t.importance;
+            if (t.dueAt) {
+                // convert to local datetime-local value
+                const d = new Date(t.dueAt);
+                const pad = n => String(n).padStart(2,'0');
+                const local = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                el('due').value = local;
+            } else {
+                el('due').value = '';
+            }
+        };
+        return div;
+    }
+
+    function renderNext(t) {
+        const box = el('nextBox');
+        if (!t) { box.style.display='none'; box.innerHTML=''; return; }
+        box.style.display='grid';
+        box.innerHTML = '';
+        box.appendChild(taskRow(t));
+    }
+
+    async function loadTasks(){
+        try {
+            const arr = await api('/tasks');
+            const list = el('taskList');
+            list.innerHTML='';
+            arr.forEach(t => list.appendChild(taskRow(t)));
+        } catch (err) {
+            alert('Load tasks failed: '+err.message);
+        }
+    }
+
+    async function refreshOrder(){
+        try {
+            const freeMin = Number(el('freeMin').value||30);
+            const stress  = Number(el('stress').value||3);
+            const arr = await api(`/order?freeMin=${freeMin}&stress=${stress}`);
+            const list = el('orderList');
+            list.innerHTML = '';
+            arr.forEach(t => list.appendChild(taskRow(t)));
+        } catch (err) {
+            alert('Order failed: '+err.message);
+        }
+    }
+
+    async function suggestNext(){
+        try {
+            const freeMin = Number(el('freeMin').value||30);
+            const stress  = Number(el('stress').value||3);
+            const t = await api(`/next?freeMin=${freeMin}&stress=${stress}`);
+            renderNext(t);
+        } catch (err) { alert('Next failed: '+err.message); }
+    }
+
+    // --- Wire events ---
+    el('btnAdd').onclick = async ()=>{
+        const payload = {
+            id: el('id').value.trim(),
+            title: el('title').value.trim(),
+            emotion: el('emotion').value,
+            minutesNeeded: Number(el('minutes').value||0),
+            importance: Number(el('importance').value||1),
+            dueAt: toRFC3339Local(el('due').value)
+        };
+        if (!payload.id || !payload.title) { alert('ID & Title required'); return; }
+        try {
+            await api('/tasks', { method:'POST', body: JSON.stringify(payload) });
+            await loadTasks();
+            await refreshOrder();
+        } catch (err) { alert('Save failed: '+err.message); }
+    };
+
+    el('btnClear').onclick = ()=>{
+        ['id','title','minutes','importance','due'].forEach(k => el(k).value='');
+        el('emotion').value='NEUTRAL';
+        el('minutes').value=25; el('importance').value=3;
+    };
+
+    el('btnLoad').onclick = loadTasks;
+    el('btnOrder').onclick = refreshOrder;
+    el('btnNext').onclick = suggestNext;
+
+    el('btnSetBase').onclick = ()=>{
+        const v = el('base').value.trim();
+        if (!v) return;
+        BASE = v.replace(/\/$/, '');
+        localStorage.setItem('todo_base', BASE);
+        showBase();
+        loadTasks();
+        refreshOrder();
+    };
+
+    // initial
+    loadTasks();
+    refreshOrder();
+    suggestNext();
+</script>
+</body>
+</html>
